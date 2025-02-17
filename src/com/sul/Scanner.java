@@ -116,7 +116,7 @@ public class Scanner {
         return tokens;
     }
 
-    public boolean checkNextValue(char next) {
+    private boolean checkNextValue(char next) {
         if (current == source.length()) return false;
         boolean val = source.charAt(current) == next;
         if (val) {
@@ -146,7 +146,7 @@ public class Scanner {
         };
     }
 
-    public void generateEOFToken(char next) {
+    private void generateEOFToken(char next) {
         while (isLetter(next, true)) {
             next = getNext();
         }
@@ -154,10 +154,10 @@ public class Scanner {
         String value = source.substring(start, current);
         addToken(TokenType.EOF, value);
     }
-    public void generateNumberToken(char next) {
+    private void generateNumberToken(char next) {
         while(isNumber(next)) {
             next = getNext();
-            if(!isNumber(next) && next!='.') {
+            if(!isNumber(next) && next!='.' && current<source.length()) {
                 current--;
             }
         }
@@ -185,14 +185,14 @@ public class Scanner {
         addToken(TokenType.EOF, value);
 
     }
-    public boolean isLetter(char c, boolean accept_number) {
+    private boolean isLetter(char c, boolean accept_number) {
         if(accept_number) {
             return (('A' <= c && c <='Z') || (c >= 'a' && c <= 'z') ||
                     (c >= '0' && c <= '9'));
         }
         return (('A' <= c && c <='Z') || (c >= 'a' && c <= 'z'));
     }
-    public boolean isNumber(char c) {
+    private boolean isNumber(char c) {
         return  (c >= '0' && c <= '9');
     }
 }
