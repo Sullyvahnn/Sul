@@ -42,7 +42,7 @@ public class Sul {
 
 
         for(Token token : tokens) {
-            System.out.println(token.lexeme + " " + token.type + token.position);
+            System.out.println(token.lexeme + " " + token.type);
         }
     }
      static void error(int line, String message) {
