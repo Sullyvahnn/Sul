@@ -10,7 +10,7 @@ public abstract class ExprGenerator {
             "Literal: Object value",
             "Binary: Expr left, Token operator, Expr right",
             "Unary: Token operator, Expr expression",
-            "Operator: Token operator"
+            "Grouping: Expr expr"
     );
     static PrintWriter writer;
 

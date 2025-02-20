@@ -3,7 +3,6 @@ package com.sul;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Sul {
@@ -39,11 +38,15 @@ public class Sul {
         Scanner scanner = new Scanner(source);
         List<Token> tokens;
         tokens = scanner.getTokens();
+//        for(Token token : tokens) {
+//            System.out.println(token.lexeme + " " + token.type);
+//        }
+        Parser parser = new Parser(tokens);
+        Expr parsedExpr = parser.parse();
+        ExprPrinter exprPrinter = new ExprPrinter();
+        System.out.println(exprPrinter.print(parsedExpr));
 
 
-        for(Token token : tokens) {
-            System.out.println(token.lexeme + " " + token.type);
-        }
     }
      static void error(int line, String message) {
         System.out.println("error in: " + line + ": " + message);
