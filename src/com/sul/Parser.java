@@ -3,6 +3,9 @@ package com.sul;
 import java.util.List;
 
 public class Parser {
+    private static class ParseError extends RuntimeException {
+
+    }
     List<Token> tokens;
     int current;
     Parser(List<Token> tokens) {
@@ -10,7 +13,17 @@ public class Parser {
         this.current = 0;
     }
     public Expr parse() {
-        return expression();
+        try{
+            Expr expr = expression();
+            if(match(TokenType.RIGHT_PAREN)) {
+                Sul.error(currentToken().position, "unrecognized right parenthesis");
+                System.exit(1);
+            }
+            return expr;
+        } catch (ParseError e) {
+            Sul.hadError = true;
+            return null;
+        }
     }
     private boolean atTheEnd() {
         return current == tokens.size()-1;
@@ -85,27 +98,50 @@ public class Parser {
         return primary();
     }
     private Expr primary() {
-        Expr expr = null;
-        if(match(TokenType.NULL)) expr = new Expr.Literal(null);
-        else if(match(TokenType.EOF)) {
+        Expr expr;
+        if(match(TokenType.NULL)) return new Expr.Literal(null);
+        if(match(TokenType.EOF)) {
             if(atTheEnd()) expr = new Expr.Literal(currentToken().value);
             else expr = new Expr.Literal(previous().value);
+            return expr;
         }
-        else if(match(TokenType.TRUE)) expr = new Expr.Literal(true);
-        else if(match(TokenType.FALSE)) expr = new Expr.Literal(false);
-        else if(match(TokenType.LEFT_PAREN)) {
+        if(match(TokenType.TRUE)) return new Expr.Literal(true);
+        if(match(TokenType.FALSE)) return new Expr.Literal(false);
+        if(match(TokenType.LEFT_PAREN)) {
             expr = expression();
-            consume(")");
-            expr = new Expr.Grouping(expr);
+            consume(")", "Expect ')' after expression.");
+            return new Expr.Grouping(expr);
+
         }
-//        else if(match(TokenType.RIGHT_PAREN)) {
-//            Sul.error(currentToken().position, "invalid parenthesis");
-//            System.exit(1);
-//        }
-        return expr;
+        throw error(currentToken(), "Expect expression.");
     }
-    private void consume(String tokenToConsume) {
-        if(currentToken().lexeme.equals(tokenToConsume)) next();
-        else Sul.error(currentToken().position, "expected " + tokenToConsume);
+    private Token consume(String tokenToConsume, String message) {
+        if(currentToken().lexeme.equals(tokenToConsume)) return next();
+        throw error(currentToken(), message);
+    }
+    private ParseError error(Token token, String message) {
+        Sul.error(currentToken().position, message);
+        return new ParseError();
+    }
+    private void synchronize() {
+        next();
+
+        while (!atTheEnd()) {
+            if (previous().type == TokenType.SEMICOLON) return;
+
+            switch (currentToken().type) {
+                case CLASS:
+                case FUN:
+                case VAR:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                case RETURN:
+                    return;
+            }
+
+            next();
+        }
     }
 }

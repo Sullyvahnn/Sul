@@ -30,11 +30,8 @@ public class Scanner {
 
     private void scanToken() {
         char next  = getNext();
-        if (isLetter(next, false)) {
-            generateEOFToken(next);
-            return;
-        } else if(isNumber(next)) {
-            generateNumberToken();
+        if (isLetter(next, true)) {
+            generateEOFToken();
             return;
         }
         switch (next) {
@@ -145,41 +142,44 @@ public class Scanner {
         };
     }
 
-    private void generateEOFToken(char next) {
-        while (isLetter(next, true)) {
-            next = getNext();
-        }
-        current--;
-        String value = source.substring(start, current);
-        addToken(TokenType.EOF, value);
-    }
     private char peek() {
         if (current >= source.length()) return '\0';
         return source.charAt(current);
     }
-    private void generateNumberToken() {
-        while ((isNumber(peek()) || peek()=='.')) {
-            ++current;
+    private void generateEOFToken() {
+        char next=source.charAt(current-1);
+        boolean isNumber = !(isLetter(next, false));
+        while ((isLetter(peek(),true) || (peek()=='.') && isNumber)) {
+            if(isLetter(next,false)) isNumber = false;
+            next = getNext();
         }
+        if (isLetter(next,false)) isNumber = false;
         String value = source.substring(start, current);
-        int dotCount = value.length() - value.replace(".", "").length();
-        if(value.endsWith(".") || dotCount>1) {
-            Sul.error(line, "unrecognized number: " + value);
-            System.exit(1);
+        Object valueInt = value;
+        if(!isNumber) {
+            char firstChar = value.charAt(0);
+            if(!isLetter(firstChar, false)) {
+                Sul.error(line, "unrecognized string: " + value);
+                System.exit(1);
+            }
+        } else {
+            int dotCount = value.length() - value.replace(".", "").length();
+            if(value.endsWith(".") || dotCount>1) {
+                Sul.error(line, "unrecognized number: " + value);
+                System.exit(1);
+            }
+            valueInt = getValue(value);
         }
-        Object valueInt = getValue(value);
+
         addToken(TokenType.EOF, valueInt);
 
     }
     private boolean isLetter(char c, boolean accept_number) {
-        if(accept_number) {
-            return (('A' <= c && c <='Z') || (c >= 'a' && c <= 'z') ||
+        if (accept_number) {
+            return (('A' <= c && c <= 'Z') || (c >= 'a' && c <= 'z') ||
                     (c >= '0' && c <= '9'));
         }
-        return (('A' <= c && c <='Z') || (c >= 'a' && c <= 'z'));
-    }
-    private boolean isNumber(char c) {
-        return  (c >= '0' && c <= '9');
+        return (('A' <= c && c <= 'Z') || (c >= 'a' && c <= 'z'));
     }
 
     private Object getValue(String s) {

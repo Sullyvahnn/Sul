@@ -43,6 +43,7 @@ public class Sul {
 //        }
         Parser parser = new Parser(tokens);
         Expr parsedExpr = parser.parse();
+        if(hadError) System.exit(2);
         ExprPrinter exprPrinter = new ExprPrinter();
         System.out.println(exprPrinter.print(parsedExpr));
 
