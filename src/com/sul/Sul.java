@@ -7,6 +7,8 @@ import java.util.List;
 
 public class Sul {
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
+    private static final Interpreter interpreter = new Interpreter();
     public static void main(String[] args) throws IOException {
         if(args.length > 1) {
             System.out.println("Usage: java Sul path");
@@ -39,13 +41,16 @@ public class Sul {
         List<Token> tokens;
         tokens = scanner.getTokens();
 //        for(Token token : tokens) {
-//            System.out.println(token.lexeme + " " + token.type);
+//            System.out.println(token.lexeme + " " + token.value);
 //        }
         Parser parser = new Parser(tokens);
         Expr parsedExpr = parser.parse();
         if(hadError) System.exit(2);
         ExprPrinter exprPrinter = new ExprPrinter();
         System.out.println(exprPrinter.print(parsedExpr));
+        interpreter.interpret(parsedExpr);
+        if(hadRuntimeError) System.exit(3);
+
 
 
     }
@@ -53,6 +58,11 @@ public class Sul {
         System.out.println("error in: " + line + ": " + message);
         hadError = true;
         //TODO
+    }
+    static void RuntimeError(RuntimeError error) {
+        System.out.println("error in runtime: " + error.getMessage());
+        System.out.println("In line: " + error.token.position);
+        hadRuntimeError = true;
     }
 }
 

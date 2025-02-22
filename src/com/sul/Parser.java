@@ -15,7 +15,7 @@ public class Parser {
     public Expr parse() {
         try{
             Expr expr = expression();
-            if(match(TokenType.RIGHT_PAREN)) {
+            if(match(TokenType.RIGHT_PAREN) && !atTheEnd()) {
                 Sul.error(currentToken().position, "unrecognized right parenthesis");
                 System.exit(1);
             }
@@ -99,9 +99,10 @@ public class Parser {
     }
     private Expr primary() {
         Expr expr;
+        int finished = current;
         if(match(TokenType.NULL)) return new Expr.Literal(null);
         if(match(TokenType.EOF)) {
-            if(atTheEnd()) expr = new Expr.Literal(currentToken().value);
+            if(finished==current) expr = new Expr.Literal(currentToken().value);
             else expr = new Expr.Literal(previous().value);
             return expr;
         }

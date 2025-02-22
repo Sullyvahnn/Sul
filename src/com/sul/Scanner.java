@@ -85,6 +85,11 @@ public class Scanner {
             case '*':
                 addToken(TokenType.STAR);
                 break;
+            case '/':
+                if(checkNextValue('/'))
+                    addToken(TokenType.COMMENT);
+                else addToken(TokenType.SLASH);
+                break;
             default:
                 Sul.error(line, "unrecognized token: " + next);
 
@@ -183,9 +188,6 @@ public class Scanner {
     }
 
     private Object getValue(String s) {
-        if(s.contains(".")) {
-            return Double.parseDouble(s);
-        }
-        return Integer.parseInt(s);
+        return Double.parseDouble(s);
     }
 }
