@@ -1,12 +1,16 @@
 package com.sul;
+
+import java.util.List;
+
 public abstract class Stmt {
 	abstract <R> R accept(Visitor<R> v);
 	interface Visitor<R> {
 		R visitExpression (Expression expression);
 		R visitPrint (Print print);
 		R visitDecl(Decl decl);
+		R visitBlock(Block block);
 	}
-	static class Expression extends Stmt {
+	public static class Expression extends Stmt {
 		Expr expr;
 		Expression(Expr expr) {
             this.expr = expr;
@@ -16,7 +20,7 @@ public abstract class Stmt {
 			return visitor.visitExpression(this);
 		}
 	}
-	static class Print extends Stmt {
+	public static class Print extends Stmt {
 		Expr expr;
 		Print(Expr expr) {
             this.expr = expr;
@@ -26,7 +30,7 @@ public abstract class Stmt {
 			return visitor.visitPrint(this);
 		}
 	}
-	static class Decl extends Stmt {
+	public static class Decl extends Stmt {
 		Token identifier;
 		Expr expr;
 		Decl(Token identifier, Expr expr) {
@@ -34,5 +38,12 @@ public abstract class Stmt {
 			this.expr = expr;
 		}
 		<R> R accept(Visitor<R> visitor) {return visitor.visitDecl(this);}
+	}
+	public static class Block extends Stmt {
+		List<Stmt> stmts;
+		Block(List<Stmt> stmts) {
+			this.stmts = stmts;
+		}
+		<R> R accept(Visitor<R> visitor) {return visitor.visitBlock(this);}
 	}
 }

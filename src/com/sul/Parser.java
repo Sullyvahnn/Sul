@@ -16,7 +16,7 @@ public class Parser {
     public List<Stmt> parse() {
         try{
             List<Stmt> statements = new ArrayList<>();
-            while(!atTheEnd()) statements.add(declaration());
+            while(atTheEnd()) statements.add(declaration());
             return statements;
         } catch (ParseError e) {
             Sul.hadError = true;
@@ -24,10 +24,10 @@ public class Parser {
         }
     }
     private boolean atTheEnd() {
-        return current == tokens.size()-1;
+        return current != tokens.size() - 1;
     }
     public Token next() {
-        if(!atTheEnd()) return tokens.get(current++);
+        if(atTheEnd()) return tokens.get(current++);
         return previous();
     }
     private Token currentToken() {
@@ -64,11 +64,18 @@ public class Parser {
         return new Stmt.Decl(name, initializer);
     }
     private Stmt statement() {
-        if(match(TokenType.PRINT)) {
-            return printExpression();
-        }
+        if(match(TokenType.PRINT)) return printExpression();
+        if(match(TokenType.LEFT_BRACE)) return new Stmt.Block(block());
         return statementExpression();
 
+    }
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+        while(atTheEnd() && currentToken().type != TokenType.RIGHT_BRACE) {
+            statements.add(declaration());
+        }
+        consume(TokenType.RIGHT_BRACE, "expected end of block");
+        return statements;
     }
     private void stmtEndingCheck() {
         if(currentToken().type == TokenType.RIGHT_PAREN) {
@@ -93,18 +100,17 @@ public class Parser {
         return new Stmt.Print(expr);
     }
     private Expr expression() {
-        return asignment();
+        return assignment();
     }
-    private Expr asignment() {
+    private Expr assignment() {
         Expr expr = equality();
         if(match(TokenType.EQUAL)) {
-            Token previous = previous();
-            Expr value = asignment();
+            Expr value = assignment();
             if(expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable) expr).name;
                 return new Expr.Assigment(name,value);
             }
-            error(previous, "cannot assign, expected variable");
+            throw error("cannot assign, expected variable");
         }
         return expr;
     }
@@ -168,26 +174,26 @@ public class Parser {
         if(match(TokenType.FALSE)) return new Expr.Literal(false);
         if(match(TokenType.LEFT_PAREN)) {
             expr = expression();
-            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
+            consume(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
             return new Expr.Grouping(expr);
 
         }
         if(match(TokenType.EOF))
             return new Expr.Variable(previous());
-        throw error(currentToken(), "Expect expression.");
+        throw error("Expected expression.");
     }
     private Token consume(TokenType tokenToConsume, String message) {
         if(currentToken().type == tokenToConsume) return next();
-        throw error(currentToken(), message);
+        throw error(message);
     }
-    private ParseError error(Token token, String message) {
+    private ParseError error(String message) {
         Sul.error(currentToken().position, message);
         return new ParseError();
     }
     private void synchronize() {
         next();
 
-        while (!atTheEnd()) {
+        while (atTheEnd()) {
             if (previous().type == TokenType.SEMICOLON) return;
 
             switch (currentToken().type) {

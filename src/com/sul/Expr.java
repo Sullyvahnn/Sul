@@ -9,7 +9,7 @@ public abstract class Expr {
 		R visitVariable (Variable variable);
 		R visitAssigment(Assigment assigment);
 	}
-	static class Literal extends Expr {
+	public static class Literal extends Expr {
 		Object value;
 		Literal(Object value) {
             this.value = value;
@@ -19,7 +19,7 @@ public abstract class Expr {
 			return visitor.visitLiteral(this);
 		}
 	}
-	static class Binary extends Expr {
+	public static class Binary extends Expr {
 		Expr left;
 		Token operator;
 		Expr right;
@@ -33,7 +33,7 @@ public abstract class Expr {
 			return visitor.visitBinary(this);
 		}
 	}
-	static class Unary extends Expr {
+	public static class Unary extends Expr {
 		Token operator;
 		Expr expression;
 		Unary(Token operator, Expr expression) {
@@ -45,7 +45,7 @@ public abstract class Expr {
 			return visitor.visitUnary(this);
 		}
 	}
-	static class Grouping extends Expr {
+	public static class Grouping extends Expr {
 		Expr expr;
 		Grouping(Expr expr) {
             this.expr = expr;
@@ -55,7 +55,7 @@ public abstract class Expr {
 			return visitor.visitGrouping(this);
 		}
 	}
-	static class Variable extends Expr {
+	public static class Variable extends Expr {
 		Token name;
 		Variable(Token name) {
 			this.name = name;
@@ -64,7 +64,7 @@ public abstract class Expr {
 			return visitor.visitVariable(this);
 		}
 	}
-	static class Assigment extends Expr {
+	public static class Assigment extends Expr {
 		Token name;
 		Expr value;
 		Assigment(Token name, Expr value) {

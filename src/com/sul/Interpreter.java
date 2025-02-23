@@ -148,11 +148,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitDecl(Stmt.Decl decl) {
-        if(decl.expr==null) Sul.env.put(decl.identifier.lexeme, null);
-        else Sul.env.put(decl.identifier.lexeme, evaluate(decl.expr));
+        if(decl.expr==null) Sul.env.put(decl.identifier, null);
+        else Sul.env.put(decl.identifier, evaluate(decl.expr));
         return null;
     }
 
+    @Override
+    public Void visitBlock(Stmt.Block block) {
+        executeBlock(block.stmts, new Env(Sul.env));
+        return null;
+    }
+    private void executeBlock(List<Stmt> block, Env env) {
+        Env previous = Sul.env;
+        try {
+            Sul.env = env;
+            for(Stmt stmt : block) {
+                executeStmt(stmt);
+            }
+        } finally {
+            Sul.env = previous;
+        }
+
+    }
     private Object evaluate(Expr expr) {
         return expr.accept(this);
     }
