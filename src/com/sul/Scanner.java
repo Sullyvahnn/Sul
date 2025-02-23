@@ -148,7 +148,7 @@ public class Scanner {
             case "or" -> TokenType.OR;
             case "false" -> TokenType.FALSE;
             case "true" -> TokenType.TRUE;
-            case "null" -> TokenType.NULL;
+            case "nihil" -> TokenType.NULL;
             case "print" -> TokenType.PRINT;
             case "return" -> TokenType.RETURN;
             case "super" -> TokenType.SUPER;

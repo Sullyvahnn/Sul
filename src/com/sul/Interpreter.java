@@ -44,6 +44,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 if(left instanceof Double && right instanceof Double) {
                     return (Double)left + (Double)right;
                 }
+                if(left instanceof Double && right instanceof String) {
+                    return makeValidString(left) + right;
+                }
+                if(right instanceof Double && left instanceof String) {
+                    return left + makeValidString(right);
+                }
                 throw new RuntimeError(operator, "cannot add two values");
             case MINUS:
                 checkBinaryType(left, right, operator);
@@ -111,6 +117,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Expr expr = grouping.expr;
         return expr.accept(this);
     }
+
+    @Override
+    public Object visitVariable(Expr.Variable variable) {
+        return Sul.env.get(variable.name);
+    }
+
+    @Override
+    public Object visitAssigment(Expr.Assigment assigment) {
+        Token name = assigment.name;
+        Object value = evaluate(assigment.value);
+        Sul.env.assign(name, value);
+        return null;
+    }
+
     @Override
     public Void visitExpression(Stmt.Expression expressionStmt) {
         evaluate(expressionStmt.expr);
@@ -125,6 +145,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
 
     }
+
+    @Override
+    public Void visitDecl(Stmt.Decl decl) {
+        if(decl.expr==null) Sul.env.put(decl.identifier.lexeme, null);
+        else Sul.env.put(decl.identifier.lexeme, evaluate(decl.expr));
+        return null;
+    }
+
     private Object evaluate(Expr expr) {
         return expr.accept(this);
     }
@@ -144,6 +172,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if(left instanceof String || right instanceof String)
             throw new RuntimeError(operator, "operator must be a number");
     }
+
 
 
 }

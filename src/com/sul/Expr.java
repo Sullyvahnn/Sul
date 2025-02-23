@@ -6,6 +6,8 @@ public abstract class Expr {
 		R visitBinary (Binary binary);
 		R visitUnary (Unary unary);
 		R visitGrouping (Grouping grouping);
+		R visitVariable (Variable variable);
+		R visitAssigment(Assigment assigment);
 	}
 	static class Literal extends Expr {
 		Object value;
@@ -51,6 +53,26 @@ public abstract class Expr {
 		@Override
 		<R> R accept(Visitor<R> visitor) {
 			return visitor.visitGrouping(this);
+		}
+	}
+	static class Variable extends Expr {
+		Token name;
+		Variable(Token name) {
+			this.name = name;
+		}
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitVariable(this);
+		}
+	}
+	static class Assigment extends Expr {
+		Token name;
+		Expr value;
+		Assigment(Token name, Expr value) {
+			this.name = name;
+			this.value = value;
+		}
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitAssigment(this);
 		}
 	}
 }

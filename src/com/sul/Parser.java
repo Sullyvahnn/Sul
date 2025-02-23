@@ -16,7 +16,7 @@ public class Parser {
     public List<Stmt> parse() {
         try{
             List<Stmt> statements = new ArrayList<>();
-            while(!atTheEnd()) statements.add(statement());
+            while(!atTheEnd()) statements.add(declaration());
             return statements;
         } catch (ParseError e) {
             Sul.hadError = true;
@@ -44,6 +44,24 @@ public class Parser {
             }
         }
         return false;
+    }
+    private Stmt declaration() {
+        try {
+            if(match(TokenType.VAR)) return varDeclaration();
+        } catch(ParseError e) {
+            synchronize();
+            return null;
+        }
+        return statement();
+    }
+    private Stmt varDeclaration() {
+        Token name = consume(TokenType.EOF, "expected variable name");
+        Expr initializer = null;
+        if(match(TokenType.EQUAL)) {
+            initializer = expression();
+        }
+        consume(TokenType.SEMICOLON, "expected semicolon after declaration");
+        return new Stmt.Decl(name, initializer);
     }
     private Stmt statement() {
         if(match(TokenType.PRINT)) {
@@ -75,7 +93,20 @@ public class Parser {
         return new Stmt.Print(expr);
     }
     private Expr expression() {
-        return equality();
+        return asignment();
+    }
+    private Expr asignment() {
+        Expr expr = equality();
+        if(match(TokenType.EQUAL)) {
+            Token previous = previous();
+            Expr value = asignment();
+            if(expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable) expr).name;
+                return new Expr.Assigment(name,value);
+            }
+            error(previous, "cannot assign, expected variable");
+        }
+        return expr;
     }
     private Expr equality() {
         Expr expr = comparison();
@@ -141,6 +172,8 @@ public class Parser {
             return new Expr.Grouping(expr);
 
         }
+        if(match(TokenType.EOF))
+            return new Expr.Variable(previous());
         throw error(currentToken(), "Expect expression.");
     }
     private Token consume(TokenType tokenToConsume, String message) {
