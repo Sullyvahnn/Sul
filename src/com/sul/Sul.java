@@ -41,15 +41,14 @@ public class Sul {
         List<Token> tokens;
         tokens = scanner.getTokens();
 //        for(Token token : tokens) {
-//            System.out.println(token.lexeme + " " + token.value);
+//            System.out.println(token.type + " " + token.lexeme);
 //        }
         Parser parser = new Parser(tokens);
-        Expr parsedExpr = parser.parse();
+        List<Stmt> parsedStatements = parser.parse();
         if(hadError) System.exit(2);
-        ExprPrinter exprPrinter = new ExprPrinter();
-        System.out.println(exprPrinter.print(parsedExpr));
-        interpreter.interpret(parsedExpr);
+        interpreter.interpret(parsedStatements);
         if(hadRuntimeError) System.exit(3);
+
 
 
 

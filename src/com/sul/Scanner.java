@@ -90,6 +90,9 @@ public class Scanner {
                     addToken(TokenType.COMMENT);
                 else addToken(TokenType.SLASH);
                 break;
+            case '"':
+                generateSTRINGToken();
+                break;
             default:
                 Sul.error(line, "unrecognized token: " + next);
 
@@ -111,6 +114,17 @@ public class Scanner {
 
     private void addToken(TokenType type) {
         addToken(type, null);
+    }
+    private void generateSTRINGToken(){
+        while(!checkNextValue('"')) {
+            getNext();
+            if(current >= source.length()) {
+                Sul.error(line, "expected: "+'"');
+                System.exit(1);
+            }
+        }
+        Object value = source.substring(start+1, current-1);
+        addToken(TokenType.STRING, value);
     }
 
     public List<Token> getTokens() {
@@ -175,8 +189,9 @@ public class Scanner {
             }
             valueInt = getValue(value);
         }
-
-        addToken(TokenType.EOF, valueInt);
+        if(valueInt instanceof Double)
+            addToken(TokenType.NUMBER, valueInt);
+        else addToken(TokenType.EOF, valueInt);
 
     }
     private boolean isLetter(char c, boolean accept_number) {

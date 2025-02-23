@@ -12,6 +12,10 @@ public abstract class ExprGenerator {
             "Unary: Token operator, Expr expression",
             "Grouping: Expr expr"
     );
+    static final List<String> statements = Arrays.asList(
+            "Expression: Expr expr",
+            "Print: Expr expr"
+    );
     static PrintWriter writer;
 
     public static void main(String[] args) throws IOException {
@@ -22,22 +26,22 @@ public abstract class ExprGenerator {
 
         final String dir = args[0];
 
-        generateASTCode(dir, "Expr");
+        generateASTCode(dir, "Stmt", statements);
     }
-    private static void generateASTCode(String dir, String name)
+    private static void generateASTCode(String dir, String name, List<String> list)
     throws IOException {
         String full_path = dir + "/" + name + ".java";
         writer = new PrintWriter(full_path);
         writer.println("package com.sul;");
         writer.println("public abstract class " + name + " {");
         writer.println("\tabstract void accept(Visitor v);");
-        generateVisitorInt();
-        fillExpressions(name);
+        generateVisitorInt(list);
+        fillExpressions(name, list);
         writer.println("}");
         writer.close();
     }
-    private static void fillExpressions(String name) {
-        for (String type : types) {
+    private static void fillExpressions(String name, List<String> list) {
+        for (String type : list) {
             String className = type.split(":")[0].trim();
             String constructorExpr = type.split(":")[1].trim();
             String []fields = type.split(":")[1].trim().split(",");
@@ -64,9 +68,9 @@ public abstract class ExprGenerator {
         writer.println("\t\t\tvisitor.visit" + className + "(this);");
         writer.println("\t\t}");
     }
-    private static void generateVisitorInt() {
+    private static void generateVisitorInt(List<String> list) {
         writer.println("\tinterface Visitor {");
-        for(String type: types) {
+        for(String type: list) {
             String classType = type.split(":")[0].trim();
             writer.println("\t\tvoid visit" + classType + " (" + classType + " " +
                     classType.toLowerCase() + ");");

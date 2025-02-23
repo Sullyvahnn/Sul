@@ -1,5 +1,6 @@
 package com.sul;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Parser {
@@ -12,14 +13,11 @@ public class Parser {
         this.tokens = tokens;
         this.current = 0;
     }
-    public Expr parse() {
+    public List<Stmt> parse() {
         try{
-            Expr expr = expression();
-            if(match(TokenType.RIGHT_PAREN) && !atTheEnd()) {
-                Sul.error(currentToken().position, "unrecognized right parenthesis");
-                System.exit(1);
-            }
-            return expr;
+            List<Stmt> statements = new ArrayList<>();
+            while(!atTheEnd()) statements.add(statement());
+            return statements;
         } catch (ParseError e) {
             Sul.hadError = true;
             return null;
@@ -46,6 +44,35 @@ public class Parser {
             }
         }
         return false;
+    }
+    private Stmt statement() {
+        if(match(TokenType.PRINT)) {
+            return printExpression();
+        }
+        return statementExpression();
+
+    }
+    private void stmtEndingCheck() {
+        if(currentToken().type == TokenType.RIGHT_PAREN) {
+            Sul.error(currentToken().position, "unexpected right parenthesis");
+            System.exit(1);
+        }
+        if(currentToken().type == TokenType.RIGHT_BRACE) {
+            Sul.error(currentToken().position, "unexpected right bracket");
+            System.exit(1);
+        }
+    }
+    private Stmt statementExpression() {
+        Expr expr = expression();
+        stmtEndingCheck();
+        consume(TokenType.SEMICOLON, "Expected semicolon after expression");
+        return new Stmt.Expression(expr);
+    }
+    private Stmt printExpression() {
+        Expr expr = expression();
+        stmtEndingCheck();
+        consume(TokenType.SEMICOLON, "Expected semicolon after expression");
+        return new Stmt.Print(expr);
     }
     private Expr expression() {
         return equality();
@@ -101,7 +128,7 @@ public class Parser {
         Expr expr;
         int finished = current;
         if(match(TokenType.NULL)) return new Expr.Literal(null);
-        if(match(TokenType.EOF)) {
+        if(match(TokenType.STRING, TokenType.NUMBER)) {
             if(finished==current) expr = new Expr.Literal(currentToken().value);
             else expr = new Expr.Literal(previous().value);
             return expr;
@@ -110,14 +137,14 @@ public class Parser {
         if(match(TokenType.FALSE)) return new Expr.Literal(false);
         if(match(TokenType.LEFT_PAREN)) {
             expr = expression();
-            consume(")", "Expect ')' after expression.");
+            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
 
         }
         throw error(currentToken(), "Expect expression.");
     }
-    private Token consume(String tokenToConsume, String message) {
-        if(currentToken().lexeme.equals(tokenToConsume)) return next();
+    private Token consume(TokenType tokenToConsume, String message) {
+        if(currentToken().type == tokenToConsume) return next();
         throw error(currentToken(), message);
     }
     private ParseError error(Token token, String message) {

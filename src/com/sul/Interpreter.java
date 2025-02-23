@@ -1,14 +1,19 @@
 package com.sul;
 
-public class Interpreter implements Expr.Visitor<Object> {
-    public void interpret(Expr expr) {
+import java.util.List;
+
+public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    public void interpret(List<Stmt> stmtList) {
         try {
-            Object result = expr.accept(this);
-            String resultString = makeValidString(result);
-            System.out.println(resultString);
+            for (Stmt stmt : stmtList) {
+                executeStmt(stmt);
+            }
         } catch (RuntimeError error) {
             Sul.RuntimeError(error);
         }
+    }
+    private void executeStmt(Stmt stmt) {
+        stmt.accept(this);
     }
     private String makeValidString(Object value) {
         if(value == null) return "nihil";
@@ -39,39 +44,34 @@ public class Interpreter implements Expr.Visitor<Object> {
                 if(left instanceof Double && right instanceof Double) {
                     return (Double)left + (Double)right;
                 }
+                throw new RuntimeError(operator, "cannot add two values");
             case MINUS:
-                if(right instanceof Double && left instanceof Double) {
-                    return (Double)left - (Double)right;
-                }
+                checkBinaryType(left, right, operator);
+                return (Double)left - (Double)right;
+
             case STAR:
-                if(right instanceof Double && left instanceof Double) {
-                    return (Double)left * (Double)right;
-                }
+                checkBinaryType(left, right, operator);
+                return (Double)left * (Double)right;
+
             case SLASH:
-                if(right instanceof Double && left instanceof Double) {
-                    return (Double)left / (Double)right;
-                }
+                checkBinaryType(left, right, operator);
+                return (Double)left / (Double)right;
             case EQUAL_EQUAL:
                 return isEqual(left,right);
             case BANG_EQUAL:
                 return !isEqual(left,right);
             case GREATER_EQUAL:
-                if(left instanceof Double && right instanceof Double) {
+                checkBinaryType(left, right, operator);
                     return (Double)left >= (Double)right;
-                }
             case LESS_EQUAL:
-                if(left instanceof Double && right instanceof Double) {
-                    return (Double)left <= (Double)right;
-                }
+                checkBinaryType(left, right, operator);
+                return (Double)left <= (Double)right;
             case GREATER:
-                if(left instanceof Double && right instanceof Double) {
-                    return (Double)left > (Double)right;
-                }
+                checkBinaryType(left, right, operator);
+                return (Double)left > (Double)right;
             case LESS:
-                if(left instanceof Double && right instanceof Double) {
-                    return (Double)left < (Double)right;
-                }
-
+                checkBinaryType(left, right, operator);
+                return (Double)left < (Double)right;
         }
         return null;
     }
@@ -89,11 +89,15 @@ public class Interpreter implements Expr.Visitor<Object> {
     public Object visitUnary(Expr.Unary unary) {
         Object expr = evaluate(unary.expression);
         Token operator = unary.operator;
-        return switch (operator.type) {
-            case MINUS -> -(double) expr;
-            case BANG -> !isTruthy(expr);
-            default -> null;
-        };
+        switch (operator.type) {
+            case MINUS:
+                checkUnaryType(expr, operator);
+                return  -(double)expr;
+            case BANG:
+                checkUnaryType(expr, operator);
+                return !isTruthy(expr);
+        }
+        return null;
     }
     private boolean isTruthy(Object expr) {
         if(expr instanceof Boolean) {
@@ -107,15 +111,39 @@ public class Interpreter implements Expr.Visitor<Object> {
         Expr expr = grouping.expr;
         return expr.accept(this);
     }
+    @Override
+    public Void visitExpression(Stmt.Expression expressionStmt) {
+        evaluate(expressionStmt.expr);
+        return null;
+    }
+
+    @Override
+    public Void visitPrint(Stmt.Print printStmt) {
+        Object value = evaluate(printStmt.expr);
+        String valueString = makeValidString(value);
+        System.out.println(valueString);
+        return null;
+
+    }
     private Object evaluate(Expr expr) {
         return expr.accept(this);
     }
     private void checkUnaryType(Object expr, Token operator) {
-        if(expr instanceof Double) {
-            return;
-        }
+        if(expr instanceof Double) return;
         if(expr instanceof String) {
-            throw new RuntimeError(operator, "cannot deny String");
+            throw new RuntimeError(operator, "operator must be a number");
         }
     }
+    private void checkBinaryType(Object left,Object right, Token operator) {
+        switch (operator.type) {
+            case SLASH:
+                if((Double)right == 0)
+                    throw new RuntimeError(operator, "cannot divide by 0");
+        }
+        if(left instanceof Double && right instanceof Double) return;
+        if(left instanceof String || right instanceof String)
+            throw new RuntimeError(operator, "operator must be a number");
+    }
+
+
 }
