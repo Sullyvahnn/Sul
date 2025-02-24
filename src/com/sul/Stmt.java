@@ -9,6 +9,7 @@ public abstract class Stmt {
 		R visitPrint (Print print);
 		R visitDecl(Decl decl);
 		R visitBlock(Block block);
+		R visitIfStmt(IfStmt ifStmt);
 	}
 	public static class Expression extends Stmt {
 		Expr expr;
@@ -45,5 +46,18 @@ public abstract class Stmt {
 			this.stmts = stmts;
 		}
 		<R> R accept(Visitor<R> visitor) {return visitor.visitBlock(this);}
+	}
+	public static class IfStmt extends Stmt {
+		Expr condition;
+		Stmt thenStmt;
+		Stmt elseStmt;
+		IfStmt(Expr condition, Stmt thenStmt, Stmt elseStmt) {
+			this.condition = condition;
+			this.thenStmt = thenStmt;
+			this.elseStmt = elseStmt;
+		}
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitIfStmt(this);
+		}
 	}
 }

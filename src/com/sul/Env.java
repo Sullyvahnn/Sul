@@ -18,7 +18,8 @@ public class Env {
             return previous.get(name);
 
         }
-        Sul.error(name.position, "cannot access variable: " + name.lexeme);
+        Sul.RuntimeError(new RuntimeError(name, "cannot use not declared variable"));
+        System.exit(1);
         return null;
     }
     public void assign(Token name, Object value) {

@@ -132,6 +132,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitOr(Expr.Or or) {
+        Object left = evaluate(or.left);
+        if(isTruthy(left)) {
+            return true;
+        }
+        Object right = evaluate(or.right);
+        return isTruthy(right) || isTruthy(left);
+    }
+
+    @Override
+    public Object visitAnd(Expr.And and) {
+        Object left = evaluate(and.left);
+        if(!isTruthy(left)) {
+            return false;
+        }
+        Object right = evaluate(and.right);
+        return isTruthy(right) && isTruthy(left);
+    }
+
+    @Override
     public Void visitExpression(Stmt.Expression expressionStmt) {
         evaluate(expressionStmt.expr);
         return null;
@@ -158,6 +178,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         executeBlock(block.stmts, new Env(Sul.env));
         return null;
     }
+
+    @Override
+    public Void visitIfStmt(Stmt.IfStmt ifStmt) {
+       Object condition = evaluate(ifStmt.condition);
+       if(isTruthy(condition)) {
+           executeStmt(ifStmt.thenStmt);
+       } else if(ifStmt.elseStmt != null) executeStmt(ifStmt.elseStmt);
+       return null;
+    }
+
     private void executeBlock(List<Stmt> block, Env env) {
         Env previous = Sul.env;
         try {

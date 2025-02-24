@@ -23,31 +23,11 @@ public class Parser {
             return null;
         }
     }
-    private boolean atTheEnd() {
-        return current != tokens.size() - 1;
-    }
-    public Token next() {
-        if(atTheEnd()) return tokens.get(current++);
-        return previous();
-    }
-    private Token currentToken() {
-        return tokens.get(current);
-    }
-    private Token previous() {
-        return tokens.get(current-1);
-    }
-    private boolean match(TokenType ...types) {
-        for (TokenType type : types) {
-            if(currentToken().type == type) {
-                next();
-                return true;
-            }
-        }
-        return false;
-    }
     private Stmt declaration() {
         try {
-            if(match(TokenType.VAR)) return varDeclaration();
+            if(match(TokenType.VAR)) {
+                return varDeclaration();
+            }
         } catch(ParseError e) {
             synchronize();
             return null;
@@ -66,8 +46,18 @@ public class Parser {
     private Stmt statement() {
         if(match(TokenType.PRINT)) return printExpression();
         if(match(TokenType.LEFT_BRACE)) return new Stmt.Block(block());
+        if(match(TokenType.IF)) return ifStmt();
         return statementExpression();
 
+    }
+    private Stmt ifStmt() {
+        Stmt elseStmt = null;
+        consume(TokenType.LEFT_PAREN, "expected left parent after if");
+        Expr condition = expression();
+        consume(TokenType.RIGHT_PAREN, "expected parents closure after if");
+        Stmt thenStmt = statement();
+        if(match(TokenType.ELSE)) elseStmt = statement();
+        return new Stmt.IfStmt(condition, thenStmt, elseStmt);
     }
     private List<Stmt> block() {
         List<Stmt> statements = new ArrayList<>();
@@ -89,13 +79,11 @@ public class Parser {
     }
     private Stmt statementExpression() {
         Expr expr = expression();
-        stmtEndingCheck();
         consume(TokenType.SEMICOLON, "Expected semicolon after expression");
         return new Stmt.Expression(expr);
     }
     private Stmt printExpression() {
         Expr expr = expression();
-        stmtEndingCheck();
         consume(TokenType.SEMICOLON, "Expected semicolon after expression");
         return new Stmt.Print(expr);
     }
@@ -103,7 +91,7 @@ public class Parser {
         return assignment();
     }
     private Expr assignment() {
-        Expr expr = equality();
+        Expr expr = or();
         if(match(TokenType.EQUAL)) {
             Expr value = assignment();
             if(expr instanceof Expr.Variable) {
@@ -111,6 +99,24 @@ public class Parser {
                 return new Expr.Assigment(name,value);
             }
             throw error("cannot assign, expected variable");
+        }
+        return expr;
+    }
+    private Expr or() {
+        Expr expr = and();
+        while(match(TokenType.OR)) {
+            Token operator = previous();
+            Expr right = and();
+            expr = new Expr.Or(expr,operator,right);
+        }
+        return expr;
+    }
+    private Expr and() {
+        Expr expr = equality();
+        while(match(TokenType.AND)) {
+            Token operator = previous();
+            Expr right = equality();
+            expr = new Expr.And(expr,operator,right);
         }
         return expr;
     }
@@ -180,6 +186,7 @@ public class Parser {
         }
         if(match(TokenType.EOF))
             return new Expr.Variable(previous());
+        stmtEndingCheck();
         throw error("Expected expression.");
     }
     private Token consume(TokenType tokenToConsume, String message) {
@@ -210,5 +217,27 @@ public class Parser {
 
             next();
         }
+    }
+    private boolean atTheEnd() {
+        return current != (tokens.size()-1);
+    }
+    public Token next() {
+        if(atTheEnd()) return tokens.get(current++);
+        return previous();
+    }
+    private Token currentToken() {
+        return tokens.get(current);
+    }
+    private Token previous() {
+        return tokens.get(current-1);
+    }
+    private boolean match(TokenType ...types) {
+        for (TokenType type : types) {
+            if(currentToken().type == type) {
+                next();
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -8,6 +8,8 @@ public abstract class Expr {
 		R visitGrouping (Grouping grouping);
 		R visitVariable (Variable variable);
 		R visitAssigment(Assigment assigment);
+		R visitOr(Or or);
+		R visitAnd(And and);
 	}
 	public static class Literal extends Expr {
 		Object value;
@@ -73,6 +75,32 @@ public abstract class Expr {
 		}
 		<R> R accept(Visitor<R> visitor) {
 			return visitor.visitAssigment(this);
+		}
+	}
+	public static class Or extends Expr {
+		Expr left;
+		Token operator;
+		Expr right;
+		Or(Expr left, Token operator, Expr right) {
+			this.left = left;
+			this.operator = operator;
+			this.right = right;
+		}
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitOr(this);
+		}
+	}
+	public static class And extends Expr {
+		Expr left;
+		Token operator;
+		Expr right;
+		And(Expr left, Token operator, Expr right) {
+			this.left = left;
+			this.operator = operator;
+			this.right = right;
+		}
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitAnd(this);
 		}
 	}
 }

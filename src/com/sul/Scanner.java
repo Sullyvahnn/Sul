@@ -20,11 +20,12 @@ public class Scanner {
 
     private List<Token> scan() {
         while (!finished) {
+            if (current >= source.length()) break;
             start = current;
             scanToken();
 
-            if (current >= source.length()) finished = true;
         }
+        addToken(TokenType.FINISH, null);
         return tokens;
     }
 

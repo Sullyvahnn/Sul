@@ -35,6 +35,16 @@ public class ExprPrinter implements Expr.Visitor<String> {
         return "";
     }
 
+    @Override
+    public String visitOr(Expr.Or or) {
+        return "";
+    }
+
+    @Override
+    public String visitAnd(Expr.And and) {
+        return "";
+    }
+
     private String parenthesize(String operator, Expr ...exprs) {
         StringBuilder msg = new StringBuilder();
         msg.append("(");
