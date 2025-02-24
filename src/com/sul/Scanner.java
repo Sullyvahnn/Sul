@@ -155,6 +155,7 @@ public class Scanner {
             case "super" -> TokenType.SUPER;
             case "this" -> TokenType.THIS;
             case "while" -> TokenType.WHILE;
+            case "for" -> TokenType.FOR;
             case "var" -> TokenType.VAR;
             case "class" -> TokenType.CLASS;
             case "fun" -> TokenType.FUN;

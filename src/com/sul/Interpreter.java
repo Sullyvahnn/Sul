@@ -188,6 +188,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
        return null;
     }
 
+    @Override
+    public Void visitWhileStmt(Stmt.WhileStmt whileStmt) {
+        while(isTruthy(evaluate((whileStmt.condition)))) {
+            executeStmt(whileStmt.body);
+        }
+        return null;
+    }
     private void executeBlock(List<Stmt> block, Env env) {
         Env previous = Sul.env;
         try {

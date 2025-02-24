@@ -1,6 +1,7 @@
 package com.sul;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Parser {
@@ -47,14 +48,55 @@ public class Parser {
         if(match(TokenType.PRINT)) return printExpression();
         if(match(TokenType.LEFT_BRACE)) return new Stmt.Block(block());
         if(match(TokenType.IF)) return ifStmt();
+        if(match(TokenType.WHILE)) return whileStmt();
+        if(match(TokenType.FOR)) return forStmt();
         return statementExpression();
+
+    }
+    private Stmt whileStmt() {
+        consume(TokenType.LEFT_PAREN, "expected: ( after while");
+        Expr condition = expression();
+        consume(TokenType.RIGHT_PAREN, "expected: ) after while expression");
+        Stmt body = statement();
+        return new Stmt.WhileStmt(condition, body);
+    }
+    private Stmt forStmt() {
+        consume(TokenType.LEFT_PAREN, "expected: ( after for");
+        Stmt initializer = null;
+        if(!match(TokenType.SEMICOLON)) {
+           initializer = declaration();
+        }
+        Expr condition = null;
+        if(!match(TokenType.SEMICOLON)) {
+            condition = expression();
+            consume(TokenType.SEMICOLON, "expected semicolon after for condition");
+        }
+        Expr increment = null;
+        if(tokens.get(current).type != TokenType.RIGHT_PAREN) {
+            increment = expression();
+        }
+        consume(TokenType.RIGHT_PAREN, "expected: ) after for increment");
+        Stmt body = statement();
+        if(increment != null) {
+            body = new Stmt.Block(Arrays.asList(
+                    body,
+                    new Stmt.Expression(increment)));
+        }
+        if(condition == null) condition = new Expr.Literal(true);
+        body = new Stmt.WhileStmt(condition, body);
+        if(initializer!=null)
+            body = new Stmt.Block(Arrays.asList(
+                    initializer,
+                    body
+            ));
+        return body;
 
     }
     private Stmt ifStmt() {
         Stmt elseStmt = null;
-        consume(TokenType.LEFT_PAREN, "expected left parent after if");
+        consume(TokenType.LEFT_PAREN, "expected: ( after if");
         Expr condition = expression();
-        consume(TokenType.RIGHT_PAREN, "expected parents closure after if");
+        consume(TokenType.RIGHT_PAREN, "expected: ) after if expression");
         Stmt thenStmt = statement();
         if(match(TokenType.ELSE)) elseStmt = statement();
         return new Stmt.IfStmt(condition, thenStmt, elseStmt);

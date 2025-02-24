@@ -10,6 +10,7 @@ public abstract class Stmt {
 		R visitDecl(Decl decl);
 		R visitBlock(Block block);
 		R visitIfStmt(IfStmt ifStmt);
+		R visitWhileStmt(WhileStmt whileStmt);
 	}
 	public static class Expression extends Stmt {
 		Expr expr;
@@ -60,4 +61,17 @@ public abstract class Stmt {
 			return visitor.visitIfStmt(this);
 		}
 	}
+	public static class WhileStmt extends Stmt {
+		Expr condition;
+		Stmt body;
+		WhileStmt(Expr condition, Stmt body) {
+			this.condition = condition;
+			this.body = body;
+		}
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitWhileStmt(this);
+		}
+	}
+
+
 }
