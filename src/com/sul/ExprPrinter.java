@@ -45,6 +45,11 @@ public class ExprPrinter implements Expr.Visitor<String> {
         return "";
     }
 
+    @Override
+    public String visitCallExpr(Expr.CallExpr callExpr) {
+        return "";
+    }
+
     private String parenthesize(String operator, Expr ...exprs) {
         StringBuilder msg = new StringBuilder();
         msg.append("(");

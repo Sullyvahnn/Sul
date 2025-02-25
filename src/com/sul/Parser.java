@@ -29,11 +29,35 @@ public class Parser {
             if(match(TokenType.VAR)) {
                 return varDeclaration();
             }
+            if(match(TokenType.FUN)) {
+                return funDeclaration("fun");
+            }
         } catch(ParseError e) {
             synchronize();
             return null;
         }
         return statement();
+    }
+    private Stmt funDeclaration(String type) {
+        Token name = consume(TokenType.EOF, "Expect " + type + " name.");
+        consume(TokenType.LEFT_PAREN, "Expect '(' after " + type + " name.");
+        List<Token> parameters = new ArrayList<>();
+        if (tokens.get(current).type != TokenType.RIGHT_PAREN) {
+            do {
+                if (parameters.size() >= 255) {
+                    Sul.error(tokens.get(current).position,
+                            "Can't have more than 255 parameters.");
+                }
+
+                parameters.add(
+                        consume(TokenType.EOF, "Expect parameter name."));
+            } while (match(TokenType.COMMA));
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+        consume(TokenType.LEFT_BRACE, "Expect '{' before " + type + " body.");
+        List<Stmt> body = block();
+        return new Stmt.FunctionDecl(name, parameters, body);
+
     }
     private Stmt varDeclaration() {
         Token name = consume(TokenType.EOF, "expected variable name");
@@ -50,8 +74,23 @@ public class Parser {
         if(match(TokenType.IF)) return ifStmt();
         if(match(TokenType.WHILE)) return whileStmt();
         if(match(TokenType.FOR)) return forStmt();
+        if(match(TokenType.BREAK, TokenType.CONTINUE)) return loopControl(previous());
+        if(match(TokenType.RETURN)) return returnStmt();
         return statementExpression();
+    }
+    private Stmt returnStmt() {
+        Token keyword = previous();
+        Expr value = null;
+        if (tokens.get(current).type != TokenType.SEMICOLON) {
+            value = expression();
+        }
 
+        consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+        return new Stmt.ReturnStmt(keyword, value);
+    }
+    private Stmt loopControl(Token token) {
+        consume(TokenType.SEMICOLON, "expected semicolon after: " + token.lexeme);
+        return new Stmt.LoopControlStmt(token);
     }
     private Stmt whileStmt() {
         consume(TokenType.LEFT_PAREN, "expected: ( after while");
@@ -207,7 +246,26 @@ public class Parser {
             Token operator = previous();
             return new Expr.Unary(operator, unary());
         }
-        return primary();
+        return call();
+    }
+    private Expr call() {
+        Expr primary = primary();
+        if(match(TokenType.LEFT_PAREN)) {
+            primary = callExpr(primary);
+        }
+        return primary;
+    }
+    private Expr callExpr(Expr primary) {
+        List<Expr> args = new ArrayList<>();
+        if(tokens.get(current).type != TokenType.RIGHT_PAREN) {
+            do {
+                if(args.size() >= 255)
+                    Sul.error(currentToken().position, "too many arguments");
+                args.add(expression());
+            } while(match(TokenType.COMMA));
+        }
+        Token parenthesis = consume(TokenType.RIGHT_PAREN, "expected end of parenthesis");
+        return new Expr.CallExpr(primary, args, parenthesis);
     }
     private Expr primary() {
         Expr expr;
@@ -246,7 +304,6 @@ public class Parser {
             if (previous().type == TokenType.SEMICOLON) return;
 
             switch (currentToken().type) {
-                case CLASS:
                 case FUN:
                 case VAR:
                 case FOR:

@@ -152,13 +152,12 @@ public class Scanner {
             case "nihil" -> TokenType.NULL;
             case "print" -> TokenType.PRINT;
             case "return" -> TokenType.RETURN;
-            case "super" -> TokenType.SUPER;
-            case "this" -> TokenType.THIS;
             case "while" -> TokenType.WHILE;
             case "for" -> TokenType.FOR;
             case "var" -> TokenType.VAR;
-            case "class" -> TokenType.CLASS;
             case "fun" -> TokenType.FUN;
+            case "break" -> TokenType.BREAK;
+            case "continue" -> TokenType.CONTINUE;
             default -> TokenType.EOF;
         };
     }

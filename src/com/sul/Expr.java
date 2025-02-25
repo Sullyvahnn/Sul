@@ -1,4 +1,7 @@
 package com.sul;
+
+import java.util.List;
+
 public abstract class Expr {
 	abstract <R> R accept(Visitor<R> v);
 	interface Visitor<R> {
@@ -10,6 +13,7 @@ public abstract class Expr {
 		R visitAssigment(Assigment assigment);
 		R visitOr(Or or);
 		R visitAnd(And and);
+		R visitCallExpr(CallExpr callExpr);
 	}
 	public static class Literal extends Expr {
 		Object value;
@@ -102,5 +106,16 @@ public abstract class Expr {
 		<R> R accept(Visitor<R> visitor) {
 			return visitor.visitAnd(this);
 		}
+	}
+	public static class CallExpr extends Expr {
+		Expr name;
+		List<Expr> args;
+		Token closureParent;
+		CallExpr(Expr name, List<Expr> args, Token closureParent) {
+			this.name = name;
+			this.args = args;
+			this.closureParent = closureParent;
+		}
+		<R> R accept(Visitor<R> visitor) { return visitor.visitCallExpr(this); }
 	}
 }

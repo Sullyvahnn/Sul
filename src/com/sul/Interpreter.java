@@ -1,8 +1,28 @@
 package com.sul;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    private boolean breakState=false;
+    final Env globals = new Env();
+    private Env env = globals;
+    Interpreter() {
+        Token clock = new Token(TokenType.EOF, 0,"clock", "clock");
+        globals.put(clock, new SulCallable() {
+            @Override
+            public int arity() { return 0; }
+
+            @Override
+            public Object call(Interpreter interpreter,
+                               List<Object> arguments) {
+                return (double)System.currentTimeMillis() / 1000.0;
+            }
+
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+    }
     public void interpret(List<Stmt> stmtList) {
         try {
             for (Stmt stmt : stmtList) {
@@ -120,14 +140,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitVariable(Expr.Variable variable) {
-        return Sul.env.get(variable.name);
+        return env.get(variable.name);
     }
 
     @Override
     public Object visitAssigment(Expr.Assigment assigment) {
         Token name = assigment.name;
         Object value = evaluate(assigment.value);
-        Sul.env.assign(name, value);
+        env.assign(name, value);
         return null;
     }
 
@@ -152,6 +172,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitCallExpr(Expr.CallExpr callExpr) {
+        Object name = evaluate(callExpr.name);
+        List<Object> arguments = new ArrayList<>();
+        for (Expr argument : callExpr.args) {
+            arguments.add(evaluate(argument));
+        }
+        if (!(name instanceof SulCallable)) {
+            throw new RuntimeError(callExpr.closureParent,
+                    "Can only call functions and classes.");
+        }
+        SulCallable function = (SulCallable)name;
+        if (arguments.size() != function.arity()) {
+            throw new RuntimeError(callExpr.closureParent, "Expected " +
+                    function.arity() + " arguments but got " +
+                    arguments.size() + ".");
+        }
+        return function.call(this, arguments);
+    }
+
+    @Override
     public Void visitExpression(Stmt.Expression expressionStmt) {
         evaluate(expressionStmt.expr);
         return null;
@@ -168,14 +208,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitDecl(Stmt.Decl decl) {
-        if(decl.expr==null) Sul.env.put(decl.identifier, null);
-        else Sul.env.put(decl.identifier, evaluate(decl.expr));
+        if(decl.expr==null) env.put(decl.identifier, null);
+        else env.put(decl.identifier, evaluate(decl.expr));
         return null;
     }
 
     @Override
     public Void visitBlock(Stmt.Block block) {
-        executeBlock(block.stmts, new Env(Sul.env));
+        executeBlock(block.stmts, new Env(env));
         return null;
     }
 
@@ -190,20 +230,36 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitWhileStmt(Stmt.WhileStmt whileStmt) {
-        while(isTruthy(evaluate((whileStmt.condition)))) {
+        while(isTruthy(evaluate((whileStmt.condition))) && !breakState) {
             executeStmt(whileStmt.body);
         }
+        breakState = false;
         return null;
     }
-    private void executeBlock(List<Stmt> block, Env env) {
-        Env previous = Sul.env;
+
+    @Override
+    public Void visitLoopControlStmt(Stmt.LoopControlStmt loopControlStmt) {
+        Token token = loopControlStmt.keyWord;
+        if(token.type == TokenType.BREAK) breakState=true;
+        return null;
+    }
+
+    @Override
+    public Void visitFunctionDecl(Stmt.FunctionDecl functionDecl) {
+        SulFunction function = new SulFunction(functionDecl, env);
+        env.put(functionDecl.name, function);
+        return null;
+    }
+
+    public void executeBlock(List<Stmt> block, Env env_) {
+        Env previous = env;
         try {
-            Sul.env = env;
+            env = env_;
             for(Stmt stmt : block) {
                 executeStmt(stmt);
             }
         } finally {
-            Sul.env = previous;
+            env = previous;
         }
 
     }
@@ -225,6 +281,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if(left instanceof Double && right instanceof Double) return;
         if(left instanceof String || right instanceof String)
             throw new RuntimeError(operator, "operator must be a number");
+    }
+    @Override
+    public Void visitReturnStmt(Stmt.ReturnStmt stmt) {
+        Object value = null;
+        if (stmt.value != null) value = evaluate(stmt.value);
+
+        throw new Return(value);
     }
 
 

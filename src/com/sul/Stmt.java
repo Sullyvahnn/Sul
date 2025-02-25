@@ -11,6 +11,9 @@ public abstract class Stmt {
 		R visitBlock(Block block);
 		R visitIfStmt(IfStmt ifStmt);
 		R visitWhileStmt(WhileStmt whileStmt);
+		R visitLoopControlStmt(LoopControlStmt loopControlStmt);
+		R visitFunctionDecl(FunctionDecl functionDecl);
+		R visitReturnStmt(ReturnStmt returnStmt);
 	}
 	public static class Expression extends Stmt {
 		Expr expr;
@@ -71,6 +74,35 @@ public abstract class Stmt {
 		<R> R accept(Visitor<R> visitor) {
 			return visitor.visitWhileStmt(this);
 		}
+	}
+	public static class LoopControlStmt extends Stmt {
+		Token keyWord;
+		LoopControlStmt(Token keyWord) {
+			this.keyWord = keyWord;
+		}
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitLoopControlStmt(this);
+		}
+	}
+	public static class FunctionDecl extends Stmt {
+		Token name;
+		List<Token> args;
+		List<Stmt> body;
+		FunctionDecl(Token name, List<Token> args, List<Stmt> body) {
+			this.name = name;
+			this.args = args;
+			this.body = body;
+		}
+		<R> R accept(Visitor<R> visitor) { return visitor.visitFunctionDecl(this);}
+	}
+	public static class ReturnStmt extends Stmt {
+		Token keyWord;
+		Expr value;
+		ReturnStmt(Token keyWord, Expr value) {
+			this.keyWord = keyWord;
+			this.value = value;
+		}
+		<R> R accept(Visitor<R> visitor) {return visitor.visitReturnStmt(this);}
 	}
 
 

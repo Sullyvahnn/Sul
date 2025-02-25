@@ -9,7 +9,6 @@ public class Sul {
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
     private static final Interpreter interpreter = new Interpreter();
-    static Env env = new Env();
     public static void main(String[] args) throws IOException {
         if(args.length > 1) {
             System.out.println("Usage: java Sul path");
