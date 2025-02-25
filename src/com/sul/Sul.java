@@ -46,6 +46,9 @@ public class Sul {
         Parser parser = new Parser(tokens);
         List<Stmt> parsedStatements = parser.parse();
         if(hadError) System.exit(2);
+        Resolver resolver = new Resolver(interpreter);
+        resolver.resolve(parsedStatements);
+        if (hadError) return;
         interpreter.interpret(parsedStatements);
         if(hadRuntimeError) System.exit(3);
 

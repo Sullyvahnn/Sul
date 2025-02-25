@@ -42,4 +42,18 @@ public class Env {
         this.previous = previous;
         env = new HashMap<>();
     }
+    Object getAt(int distance, String name) {
+        return ancestor(distance).env.get(name);
+    }
+    Env ancestor(int distance) {
+        Env environment = this;
+        for (int i = 0; i < distance; i++) {
+            environment = environment.previous;
+        }
+
+        return environment;
+    }
+    void assignAt(int distance, Token name, Object value) {
+        ancestor(distance).env.put(name.lexeme, value);
+    }
 }

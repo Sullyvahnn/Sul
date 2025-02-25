@@ -1,12 +1,15 @@
 package com.sul;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private boolean breakState=false;
     final Env globals = new Env();
     private Env env = globals;
+    private final Map<Expr, Integer> locals = new HashMap<>();
     Interpreter() {
         Token clock = new Token(TokenType.EOF, 0,"clock", "clock");
         globals.put(clock, new SulCallable() {
@@ -22,6 +25,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             @Override
             public String toString() { return "<native fn>"; }
         });
+    }
+    void resolve(Expr expr, int depth) {
+        locals.put(expr, depth);
     }
     public void interpret(List<Stmt> stmtList) {
         try {
@@ -140,13 +146,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitVariable(Expr.Variable variable) {
-        return env.get(variable.name);
+        return lookUpVariable(variable.name, variable);
+    }
+    private Object lookUpVariable(Token name, Expr expr) {
+        Integer distance = locals.get(expr);
+        if (distance != null) {
+            return env.getAt(distance, name.lexeme);
+        } else {
+            return globals.get(name);
+        }
     }
 
     @Override
     public Object visitAssigment(Expr.Assigment assigment) {
         Token name = assigment.name;
         Object value = evaluate(assigment.value);
+        Integer distance = locals.get(assigment);
+        if (distance != null) {
+            env.assignAt(distance, assigment.name, value);
+        } else {
+            globals.assign(assigment.name, value);
+        }
         env.assign(name, value);
         return null;
     }
